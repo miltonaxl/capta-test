@@ -36,7 +36,7 @@ push: ## Realizar git push usando claves SSH locales del proyecto
 	@echo "$(YELLOW)🔑 Usando clave SSH: $(SSH_KEY_PATH)$(NC)"
 	@eval "$$(ssh-agent -s)" && \
 	ssh-add $(SSH_KEY_PATH) && \
-	git push
+	(git push || git push --set-upstream origin $$(git branch --show-current))
 	@echo "$(GREEN)✅ Git push completado con claves locales$(NC)"
 
 
