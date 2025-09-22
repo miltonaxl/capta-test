@@ -349,7 +349,3 @@ CMD ["npm", "start"]
 Este proyecto está bajo la **Licencia MIT**. Ver `LICENSE` para más detalles.
 
 ---
-
-**Desarrollado con ❤️ para Capta Recruitment Process**
-
-*API REST robusta y confiable para cálculo de fechas hábiles en Colombia* 🇨🇴
