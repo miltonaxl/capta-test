@@ -7,8 +7,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "jest --testPathIgnorePatterns=e2e",
+    "test:e2e": "jest --testPathPattern=e2e --runInBand --forceExit",
+    "test:watch": "jest --watch --testPathIgnorePatterns=e2e",
+    "test:e2e:watch": "jest --watch --testPathPattern=e2e --runInBand"
   },
   "dependencies": {
     "axios": "^1.6.0",

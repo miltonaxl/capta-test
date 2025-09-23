@@ -132,8 +132,16 @@ curl "http://localhost:3000/api/working-days?days=1&date=2024-12-31T15:00:00.000
 #### Error de Validación (400 Bad Request)
 ```json
 {
-  "error": "InvalidParameters",
+  "error": "BadRequest",
   "message": "Days must be a positive integer"
+}
+```
+
+#### Endpoint No Encontrado (404 Not Found)
+```json
+{
+  "error": "NotFound",
+  "message": "Endpoint not found"
 }
 ```
 
@@ -142,6 +150,14 @@ curl "http://localhost:3000/api/working-days?days=1&date=2024-12-31T15:00:00.000
 {
   "error": "ServiceUnavailable",
   "message": "Holiday service is temporarily unavailable"
+}
+```
+
+#### Error Interno del Servidor (500 Internal Server Error)
+```json
+{
+  "error": "InternalServerError",
+  "message": "An unexpected error occurred"
 }
 ```
 
@@ -154,6 +170,8 @@ src/
 ├── services/                 # 🔧 Lógica de negocio
 │   ├── workingDaysService.ts    # Cálculo de días hábiles
 │   └── holidayService.ts        # Gestión de festivos
+├── middleware/               # 🛡️ Middleware personalizado
+│   └── errorHandler.ts          # Manejo centralizado de errores
 ├── utils/                    # 🛠️ Utilidades
 │   └── dateUtils.ts             # Manipulación de fechas
 ├── types/                    # 📝 Definiciones TypeScript
@@ -163,7 +181,8 @@ src/
 ├── config/                   # ⚙️ Configuración
 │   └── index.ts
 ├── __tests__/               # 🧪 Tests
-│   └── workingDays.test.ts
+│   ├── e2e/                     # Tests End-to-End
+│   └── workingDays.test.ts      # Tests unitarios
 └── index.ts                 # 🚀 Servidor principal
 ```
 
@@ -173,6 +192,7 @@ src/
 - Maneja las peticiones HTTP
 - Valida parámetros de entrada
 - Retorna respuestas formateadas
+- Usa `asyncHandler` para manejo automático de errores
 
 #### 🔧 **WorkingDaysService**
 - Lógica principal de cálculo
@@ -183,6 +203,13 @@ src/
 - Integración con API externa de festivos
 - Caching de 24 horas
 - Manejo de errores de red
+
+#### 🛡️ **ErrorHandler Middleware**
+- Manejo centralizado de errores
+- Formato consistente de respuestas de error
+- Soporte para múltiples tipos de error (400, 401, 403, 404, 422, 429, 500, 503)
+- Wrapper `asyncHandler` para funciones asíncronas
+- Logging automático de errores
 
 #### 🛠️ **DateUtils**
 - Conversión de zonas horarias
@@ -225,8 +252,14 @@ https://content.capta.co/Recruitment/WorkingDays.json
 ### Ejecutar Tests
 
 ```bash
-# Todos los tests
+# Todos los tests (unitarios + E2E)
 npm test
+
+# Solo tests unitarios
+npm run test:unit
+
+# Solo tests E2E
+npm run test:e2e
 
 # Tests en modo watch
 npm run test:watch
@@ -237,8 +270,7 @@ npm test -- --coverage
 
 ### Cobertura de Tests
 
-Los tests cubren **17 casos** incluyendo:
-
+#### Tests Unitarios (17 casos)
 - ✅ **Validación de parámetros** (tipos, rangos, formatos)
 - ✅ **Conversión de zonas horarias** (COT ↔ UTC)
 - ✅ **Lógica de días hábiles** (fines de semana, festivos)
@@ -246,6 +278,14 @@ Los tests cubren **17 casos** incluyendo:
 - ✅ **Aproximación hacia atrás** (fechas fuera de horario)
 - ✅ **Casos extremos** (festivos, fines de semana)
 - ✅ **Ejemplos de negocio** (todos los casos del tests.md)
+
+#### Tests End-to-End (E2E)
+- ✅ **API endpoints completos** (GET /api/working-days, /health, /)
+- ✅ **Manejo de errores HTTP** (400, 404, 500, 503)
+- ✅ **Validación de respuestas** (formato JSON, códigos de estado)
+- ✅ **Integración completa** (servidor real, base de datos, APIs externas)
+- ✅ **Flujos de usuario** (casos de uso reales)
+- ✅ **Performance testing** (tiempos de respuesta)
 
 ### Ejemplos de Tests
 

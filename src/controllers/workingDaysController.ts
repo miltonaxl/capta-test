@@ -1,21 +1,29 @@
 import { Request, Response } from 'express';
 import { workingDaysService } from '../services/workingDaysService';
-import { WorkingDaysResponse, ErrorResponse } from '../types';
+import { WorkingDaysResponse } from '../types';
+import { createError, asyncHandler } from '../middleware/errorHandler';
 
 class WorkingDaysController {
   /**
    * Handles the working days calculation request
    */
-  async calculateWorkingDays(req: Request, res: Response): Promise<void> {
+  calculateWorkingDays = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { days, hours, date } = req.query;
+
+    // Parse and validate parameters
+    const parsedDays = days ? parseInt(days as string, 10) : undefined;
+    const parsedHours = hours ? parseInt(hours as string, 10) : undefined;
+    
     try {
-      const { days, hours, date } = req.query;
-
-      // Parse and validate parameters
-      const parsedDays = days ? parseInt(days as string, 10) : undefined;
-      const parsedHours = hours ? parseInt(hours as string, 10) : undefined;
-      
       workingDaysService.validateParameters(parsedDays, parsedHours, date as string);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw createError.badRequest(error.message);
+      }
+      throw createError.badRequest('Invalid parameters');
+    }
 
+    try {
       // Calculate result
       const resultDate = await workingDaysService.calculateWorkingDateTime(
         parsedDays,
@@ -29,58 +37,28 @@ class WorkingDaysController {
       };
 
       res.status(200).json(response);
-
     } catch (error) {
-      this.handleError(error, res);
-    }
-  }
-
-  /**
-   * Handles different types of errors and sends appropriate responses
-   */
-  private handleError(error: unknown, res: Response): void {
-    console.error('Error in working days calculation:', error);
-
-    if (error instanceof Error) {
-      const errorMessage = error.message.toLowerCase();
-      
-      if (errorMessage.includes('invalid') || errorMessage.includes('must be')) {
-        const errorResponse: ErrorResponse = {
-          error: 'InvalidParameters',
-          message: error.message
-        };
-        res.status(400).json(errorResponse);
-        return;
+      if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+        
+        if (errorMessage.includes('failed to fetch') || errorMessage.includes('api error')) {
+          throw createError.serviceUnavailable('Holiday service is temporarily unavailable');
+        }
       }
-      
-      if (errorMessage.includes('failed to fetch') || errorMessage.includes('api error')) {
-        const errorResponse: ErrorResponse = {
-          error: 'ServiceUnavailable',
-          message: 'Holiday service is temporarily unavailable'
-        };
-        res.status(503).json(errorResponse);
-        return;
-      }
+      throw createError.internal('An error occurred while calculating working days');
     }
-
-    // Generic error response
-    const errorResponse: ErrorResponse = {
-      error: 'InternalError',
-      message: 'An internal server error occurred'
-    };
-    res.status(500).json(errorResponse);
-  }
+  });
 
   /**
    * Health check endpoint
    */
-  healthCheck(_req: Request, res: Response): void {
+  healthCheck = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     res.status(200).json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
       service: 'Colombia Working Days API'
     });
-  }
+  });
 }
 
 export const workingDaysController = new WorkingDaysController();
