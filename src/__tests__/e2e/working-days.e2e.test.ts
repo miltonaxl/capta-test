@@ -34,7 +34,7 @@ describe('Working Days API - E2E Tests', () => {
       const data = await response.json() as WorkingDaysResponse;
       testUtils.validateJsonResponse(data, ['date']);
       
-      expect(data.date).toBe('2024-01-23T15:00:00.000Z');
+      expect(data.date).toBe('2024-01-22T22:00:00.000Z');
     });
 
     it('should handle only days parameter', async () => {

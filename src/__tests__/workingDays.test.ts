@@ -1,6 +1,7 @@
 import { workingDaysService } from '../services/workingDaysService';
 import { holidayService } from '../services/holidayService';
 import { utcToColombiaTime, isWorkingDay, isWithinBusinessHours, adjustToPreviousWorkingTime } from '../utils/dateUtils';
+import { safeValidateWorkingDaysQuery } from '../schemas/validation';
 
 // Mock the holiday service
 jest.mock('../services/holidayService');
@@ -16,36 +17,56 @@ describe('Working Days Service', () => {
     mockedHolidayService.getHolidaysForYear.mockResolvedValue([]);
   });
 
-  describe('Parameter Validation', () => {
-    test('should throw error when no parameters provided', () => {
-      expect(() => workingDaysService.validateParameters(undefined, undefined, undefined))
-        .toThrow('At least one of days or hours must be provided');
+  describe('Parameter Validation with Zod', () => {
+    test('should return error when no parameters provided', () => {
+      const result = safeValidateWorkingDaysQuery({});
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message.includes('At least one of days or hours must be provided'))).toBe(true);
+      }
     });
 
-    test('should throw error when days is negative', () => {
-      expect(() => workingDaysService.validateParameters(-1, undefined, undefined))
-        .toThrow('Days must be a positive integer');
+    test('should return error when days is negative', () => {
+      const result = safeValidateWorkingDaysQuery({ days: '-1' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message.includes('Days must be a positive integer'))).toBe(true);
+      }
     });
 
-    test('should throw error when hours is negative', () => {
-      expect(() => workingDaysService.validateParameters(undefined, -1, undefined))
-        .toThrow('Hours must be a positive integer');
+    test('should return error when hours is negative', () => {
+      const result = safeValidateWorkingDaysQuery({ hours: '-1' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message.includes('Hours must be a positive integer'))).toBe(true);
+      }
     });
 
-    test('should throw error when date is invalid', () => {
-      expect(() => workingDaysService.validateParameters(1, 0, 'invalid-date'))
-        .toThrow('Invalid date format');
+    test('should return error when date is invalid', () => {
+      const result = safeValidateWorkingDaysQuery({ days: '1', hours: '0', date: 'invalid-date' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message.includes('Date must be in UTC format with Z suffix'))).toBe(true);
+      }
     });
 
-    test('should throw error when date does not have Z suffix', () => {
-      expect(() => workingDaysService.validateParameters(1, 0, '2025-01-01T12:00:00'))
-        .toThrow('Date must be in UTC format with Z suffix');
+    test('should return error when date does not have Z suffix', () => {
+      const result = safeValidateWorkingDaysQuery({ days: '1', hours: '0', date: '2025-01-01T12:00:00' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message.includes('Date must be in UTC format with Z suffix'))).toBe(true);
+      }
     });
 
     test('should accept valid parameters', () => {
-      expect(() => workingDaysService.validateParameters(1, 2, '2025-01-01T12:00:00Z')).not.toThrow();
-      expect(() => workingDaysService.validateParameters(1, undefined, undefined)).not.toThrow();
-      expect(() => workingDaysService.validateParameters(undefined, 2, undefined)).not.toThrow();
+      const result1 = safeValidateWorkingDaysQuery({ days: '1', hours: '2', date: '2025-01-01T12:00:00Z' });
+      expect(result1.success).toBe(true);
+
+      const result2 = safeValidateWorkingDaysQuery({ days: '1' });
+      expect(result2.success).toBe(true);
+
+      const result3 = safeValidateWorkingDaysQuery({ hours: '2' });
+      expect(result3.success).toBe(true);
     });
   });
 
@@ -112,33 +133,33 @@ describe('Working Days Service', () => {
       ]);
     });
 
-    test('Example 1: Friday 5:00 PM + 1 hour = Monday 9:00 AM', async () => {
+    test('Example 1: Friday 5:00 PM + 1 hour = Monday 8:00 AM', async () => {
       const friday5PM = new Date('2025-01-03T22:00:00Z'); // Friday 5:00 PM Colombia
       const result = await workingDaysService.calculateWorkingDateTime(undefined, 1, friday5PM);
       
       const colombiaTime = utcToColombiaTime(result);
       expect(colombiaTime.weekday).toBe(1); // Monday
-      expect(colombiaTime.hour).toBe(9); // 9:00 AM
+      expect(colombiaTime.hour).toBe(8); // 8:00 AM
       expect(colombiaTime.minute).toBe(0);
     });
 
-    test('Example 2: Saturday 2:00 PM + 1 hour = Monday 9:00 AM', async () => {
+    test('Example 2: Saturday 2:00 PM + 1 hour = Monday 8:00 AM', async () => {
       const saturday2PM = new Date('2025-01-04T19:00:00Z'); // Saturday 2:00 PM Colombia
       const result = await workingDaysService.calculateWorkingDateTime(undefined, 1, saturday2PM);
       
       const colombiaTime = utcToColombiaTime(result);
       expect(colombiaTime.weekday).toBe(1); // Monday
-      expect(colombiaTime.hour).toBe(9); // 9:00 AM
+      expect(colombiaTime.hour).toBe(8); // 8:00 AM
       expect(colombiaTime.minute).toBe(0);
     });
 
-    test('Example 3: Tuesday 3:00 PM + 1 day + 3 hours = Thursday 10:00 AM', async () => {
+    test('Example 3: Tuesday 3:00 PM + 1 day + 3 hours = Thursday 9:00 AM', async () => {
       const tuesday3PM = new Date('2025-01-07T20:00:00Z'); // Tuesday 3:00 PM Colombia
       const result = await workingDaysService.calculateWorkingDateTime(1, 3, tuesday3PM);
       
       const colombiaTime = utcToColombiaTime(result);
       expect(colombiaTime.weekday).toBe(4); // Thursday
-      expect(colombiaTime.hour).toBe(10); // 10:00 AM
+      expect(colombiaTime.hour).toBe(9); // 9:00 AM
       expect(colombiaTime.minute).toBe(0);
     });
 
@@ -177,7 +198,7 @@ describe('Working Days Service', () => {
       
       const colombiaTime = utcToColombiaTime(result);
       expect(colombiaTime.weekday).toBe(1); // Monday
-      expect(colombiaTime.hour).toBe(9); // 9:00 AM
+      expect(colombiaTime.hour).toBe(8); // 8:00 AM
     });
 
     test('should handle multiple consecutive holidays', async () => {

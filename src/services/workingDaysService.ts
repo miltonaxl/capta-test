@@ -72,10 +72,10 @@ class WorkingDaysService {
     let currentDate = startDate;
     let hoursAdded = 0;
     
-    // Special case: if we start outside business hours and only need 1 hour, go to 9:00 AM
+    // Special case: if we start outside business hours and only need 1 hour, go to 8:00 AM
     const remainingHours = this.calculateRemainingBusinessHours(currentDate);
     if (remainingHours === 0 && hoursToAdd === 1) {
-      return await this.getNextWorkingDayStart(currentDate, false);
+      return await this.getNextWorkingDayStart(currentDate);
     }
 
     while (hoursAdded < hoursToAdd) {
@@ -92,7 +92,7 @@ class WorkingDaysService {
 
       // If we still have hours to add, move to next business day
       if (hoursAdded < hoursToAdd) {
-        currentDate = await this.getNextWorkingDayStart(currentDate, false);
+        currentDate = await this.getNextWorkingDayStart(currentDate);
       }
     }
 
@@ -214,10 +214,9 @@ class WorkingDaysService {
   /**
    * Gets the start of the next working day
    */
-  private async getNextWorkingDayStart(date: DateTime, countFirstHour: boolean = false): Promise<DateTime> {
-    // Start with the next day at 9:00 AM (business logic: overflow hours start at 9:00 AM)
-    // If countFirstHour is true, start at 8:00 AM so that adding 1 hour gets us to 9:00 AM
-    const startHour = countFirstHour ? BusinessHoursConfig.startHour : BusinessHoursConfig.startHour + 1;
+  private async getNextWorkingDayStart(date: DateTime): Promise<DateTime> {
+    // Start with the next day at 8:00 AM (business hours start)
+    const startHour = BusinessHoursConfig.startHour;
     
     let nextDay = date.plus({ days: 1 }).set({
       hour: startHour,
@@ -239,34 +238,7 @@ class WorkingDaysService {
     return nextDay;
   }
 
-  /**
-   * Validates input parameters
-   */
-  validateParameters(days?: number, hours?: number, date?: string): void {
-    if (days === undefined && hours === undefined) {
-      throw new Error('At least one of days or hours must be provided');
-    }
 
-    if (days !== undefined && (typeof days !== 'number' || days < 0 || !Number.isInteger(days))) {
-      throw new Error('Days must be a positive integer');
-    }
-
-    if (hours !== undefined && (typeof hours !== 'number' || hours < 0 || !Number.isInteger(hours))) {
-      throw new Error('Hours must be a positive integer');
-    }
-
-    if (date !== undefined) {
-      const parsedDate = new Date(date);
-      if (isNaN(parsedDate.getTime())) {
-        throw new Error('Invalid date format. Must be ISO 8601 with Z suffix');
-      }
-      
-      // Check if date has Z suffix (UTC)
-      if (!date.endsWith('Z')) {
-        throw new Error('Date must be in UTC format with Z suffix');
-      }
-    }
-  }
 }
 
 export const workingDaysService = new WorkingDaysService();

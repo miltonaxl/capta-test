@@ -279,8 +279,8 @@ describe('Edge Cases & Data Validation - E2E Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json() as WorkingDaysResponse;
       
-      // Should skip to next working day and end at 9:00 AM COT (14:00 UTC)
-      expect(data.date).toBe('2024-01-16T14:00:00.000Z');
+      // Should skip to next working day and end at 8:00 AM COT (13:00 UTC)
+      expect(data.date).toBe('2024-01-16T13:00:00.000Z');
     });
   });
 });

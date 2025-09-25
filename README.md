@@ -9,10 +9,10 @@ API REST para cálculo preciso de fechas hábiles en Colombia que considera día
 - ✅ **Horarios laborales**: Lunes a Viernes, 8:00 AM - 5:00 PM (COT)
 - ✅ **Horario de almuerzo**: 12:00 PM - 1:00 PM (excluido)
 - ✅ **Manejo de zona horaria** America/Bogota con salida UTC
-- ✅ **Validación estricta** de parámetros de entrada
+- ✅ **Validación robusta** con Zod para type safety
 - ✅ **Aproximación hacia atrás** para fechas fuera de horario
 - ✅ **Caching inteligente** de días festivos (24h)
-- ✅ **Tests exhaustivos** (17 casos de prueba)
+- ✅ **Tests exhaustivos** (17 unitarios + 45 E2E)
 - ✅ **TypeScript** con tipado estricto
 - ✅ **Documentación completa** de la API
 
@@ -34,6 +34,13 @@ API REST para cálculo preciso de fechas hábiles en Colombia que considera día
    ```bash
    npm install
    ```
+   
+   **Dependencias principales:**
+   - Express.js (servidor web)
+   - TypeScript (tipado estático)
+   - Zod (validación y schemas)
+   - Helmet (seguridad)
+   - CORS (cross-origin)
 
 3. **Compilar TypeScript:**
    ```bash
@@ -170,6 +177,8 @@ src/
 ├── services/                 # 🔧 Lógica de negocio
 │   ├── workingDaysService.ts    # Cálculo de días hábiles
 │   └── holidayService.ts        # Gestión de festivos
+├── schemas/                  # 📋 Validación con Zod
+│   └── validation.ts            # Esquemas de validación
 ├── middleware/               # 🛡️ Middleware personalizado
 │   └── errorHandler.ts          # Manejo centralizado de errores
 ├── utils/                    # 🛠️ Utilidades
@@ -190,9 +199,15 @@ src/
 
 #### 🎮 **WorkingDaysController**
 - Maneja las peticiones HTTP
-- Valida parámetros de entrada
+- Integra validación con Zod
 - Retorna respuestas formateadas
 - Usa `asyncHandler` para manejo automático de errores
+
+#### 📋 **Validation Schemas (Zod)**
+- Validación robusta con type safety
+- Transformación automática de tipos
+- Mensajes de error descriptivos
+- Esquemas reutilizables y composables
 
 #### 🔧 **WorkingDaysService**
 - Lógica principal de cálculo
@@ -271,7 +286,7 @@ npm test -- --coverage
 ### Cobertura de Tests
 
 #### Tests Unitarios (17 casos)
-- ✅ **Validación de parámetros** (tipos, rangos, formatos)
+- ✅ **Validación con Zod** (tipos, rangos, formatos, transformaciones)
 - ✅ **Conversión de zonas horarias** (COT ↔ UTC)
 - ✅ **Lógica de días hábiles** (fines de semana, festivos)
 - ✅ **Horarios laborales** (8AM-5PM, almuerzo)
@@ -279,13 +294,14 @@ npm test -- --coverage
 - ✅ **Casos extremos** (festivos, fines de semana)
 - ✅ **Ejemplos de negocio** (todos los casos del tests.md)
 
-#### Tests End-to-End (E2E)
+#### Tests End-to-End (45 casos)
 - ✅ **API endpoints completos** (GET /api/working-days, /health, /)
 - ✅ **Manejo de errores HTTP** (400, 404, 500, 503)
 - ✅ **Validación de respuestas** (formato JSON, códigos de estado)
-- ✅ **Integración completa** (servidor real, base de datos, APIs externas)
+- ✅ **Integración completa** (servidor real, APIs externas)
 - ✅ **Flujos de usuario** (casos de uso reales)
 - ✅ **Performance testing** (tiempos de respuesta)
+- ✅ **Validación Zod** (casos de error y éxito)
 
 ### Ejemplos de Tests
 

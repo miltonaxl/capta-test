@@ -2,33 +2,29 @@ import { Request, Response } from 'express';
 import { workingDaysService } from '../services/workingDaysService';
 import { WorkingDaysResponse } from '../types';
 import { createError, asyncHandler } from '../middleware/errorHandler';
+import { safeValidateWorkingDaysQuery } from '../schemas/validation';
 
 class WorkingDaysController {
   /**
    * Handles the working days calculation request
    */
   calculateWorkingDays = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { days, hours, date } = req.query;
-
-    // Parse and validate parameters
-    const parsedDays = days ? parseInt(days as string, 10) : undefined;
-    const parsedHours = hours ? parseInt(hours as string, 10) : undefined;
+    // Validate parameters using Zod
+    const validationResult = safeValidateWorkingDaysQuery(req.query);
     
-    try {
-      workingDaysService.validateParameters(parsedDays, parsedHours, date as string);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw createError.badRequest(error.message);
-      }
-      throw createError.badRequest('Invalid parameters');
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.issues.map((err: any) => err.message).join(', ');
+      throw createError.badRequest(`Validation error: ${errorMessages}`);
     }
+
+    const { days, hours, date } = validationResult.data;
 
     try {
       // Calculate result
       const resultDate = await workingDaysService.calculateWorkingDateTime(
-        parsedDays,
-        parsedHours,
-        date ? new Date(date as string) : undefined
+        days,
+        hours,
+        date ? new Date(date) : undefined
       );
 
       // Format response

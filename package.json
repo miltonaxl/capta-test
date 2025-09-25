@@ -19,7 +19,8 @@
     "date-holidays": "^3.26.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "luxon": "^3.4.0"
+    "luxon": "^3.4.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
